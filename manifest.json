@@ -78,6 +78,7 @@
     "256": "/assets/icons/dark/icon-256.png"
   },
   "permissions": [
+    "downloads",
     "sessions",
     "storage"
   ],

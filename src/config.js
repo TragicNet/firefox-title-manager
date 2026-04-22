@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   openingTag: 'fullWindowTitleOpeningTag',
   closingTag: 'fullWindowTitleClosingTag',
   windowStates: 'windowStateStore',
+  logs: 'extensionLogs',
 };
 
 export const SESSION_KEYS = {
