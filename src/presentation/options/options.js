@@ -1,67 +1,44 @@
-import WindowTitler from '/src/WindowTitler.js';
-import ProfileTitleDao from '/src/persistence/ProfileTitleDao.js';
-import FullWindowTitleTagDao from '/src/persistence/FullWindowTitleTagDao.js';
-import DefaultValues from '/src/model/DefaultValues.js';
+import FirefoxTitleManager from '/src/FirefoxTitleManager.js';
+import { DEFAULT_SETTINGS } from '/src/config.js';
 
-const windowTitler = new WindowTitler();
-const profileTitleDao = new ProfileTitleDao();
-const titleTags = new FullWindowTitleTagDao();
+const manager = new FirefoxTitleManager();
 
+const profileTitleInput = document.querySelector('#profile-title');
+const profileSeparatorInput = document.querySelector('#profile-title-separator');
+const openingTagInput = document.querySelector('#opening-tag');
+const closingTagInput = document.querySelector('#closing-tag');
 
-// Profile Functions
-function setProfileOptions(profileTitle, profileTitleSeparator) {
-  document.querySelector('#profile-title').value = profileTitle;
-  document.querySelector('#profile-title-separator').value = profileTitleSeparator;
+function applySettings(settings) {
+  profileTitleInput.value = settings.profileTitle;
+  profileSeparatorInput.value = settings.profileSeparator;
+  openingTagInput.value = settings.openingTag;
+  closingTagInput.value = settings.closingTag;
 }
 
-async function restoreProfileOptions() {
-  const profileTitle = await profileTitleDao.getProfileTitle();
-  const profileTitleSeparator = await profileTitleDao.getProfileTitleSeparator();
-
-  setProfileOptions(profileTitle, profileTitleSeparator);
+async function loadSettings() {
+  applySettings(await manager.getSettings());
 }
 
-async function saveProfileOptions() {
-  const profileTitle = document.querySelector('#profile-title').value;
-  const profileTitleSeparator = document.querySelector('#profile-title-separator').value;
+async function saveProfile() {
+  await manager.saveProfile(profileTitleInput.value, profileSeparatorInput.value);
+}
 
-  await windowTitler.saveProfileTitleAndRefreshPresentation(profileTitle, profileTitleSeparator);
+async function saveTags() {
+  await manager.saveTags(openingTagInput.value, closingTagInput.value);
 }
 
 function restoreProfileDefaults() {
-  setProfileOptions(DefaultValues.profileTitle, DefaultValues.profileTitleSeparator);
+  profileTitleInput.value = DEFAULT_SETTINGS.profileTitle;
+  profileSeparatorInput.value = DEFAULT_SETTINGS.profileSeparator;
 }
 
-// Tag Functions
-function setFullWindowTitleTagOptions(openingTag, closingTag) {
-  document.querySelector('#opening-tag').value = openingTag;
-  document.querySelector('#closing-tag').value = closingTag;
+function restoreTagDefaults() {
+  openingTagInput.value = DEFAULT_SETTINGS.openingTag;
+  closingTagInput.value = DEFAULT_SETTINGS.closingTag;
 }
 
-async function restoreFullWindowTitleTagOptions() {
-  const openingTag = await titleTags.getOpeningTag();
-  const closingTag = await titleTags.getClosingTag();
-
-  setFullWindowTitleTagOptions(openingTag, closingTag);
-}
-
-async function saveFullWindowTitleTagOptions() {
-  const openingTag = document.querySelector('#opening-tag').value;
-  const closingTag = document.querySelector('#closing-tag').value;
-  await windowTitler.saveFullWindowTitleTagsAndRefreshPresentation(openingTag, closingTag);
-}
-
-function restoreFullWindowTitleTagDefaults() {
-  setFullWindowTitleTagOptions(DefaultValues.fullWindowTitleOpeningTag,
-    DefaultValues.fullWindowTitleClosingTag);
-}
-
-// Profile Actions
-restoreProfileOptions();
-document.querySelector('#save-profile').addEventListener('click', saveProfileOptions);
+loadSettings();
+document.querySelector('#save-profile').addEventListener('click', saveProfile);
 document.querySelector('#restore-profile-defaults').addEventListener('click', restoreProfileDefaults);
-
-// Tag Actions
-restoreFullWindowTitleTagOptions();
-document.querySelector('#save-tags').addEventListener('click', saveFullWindowTitleTagOptions);
-document.querySelector('#restore-tag-defaults').addEventListener('click', restoreFullWindowTitleTagDefaults);
+document.querySelector('#save-tags').addEventListener('click', saveTags);
+document.querySelector('#restore-tag-defaults').addEventListener('click', restoreTagDefaults);

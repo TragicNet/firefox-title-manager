@@ -1,37 +1,25 @@
-import WindowTitler from '/src/WindowTitler.js';
-import WindowTitleDao from '/src/persistence/UserWindowTitleDao.js';
+import FirefoxTitleManager from '/src/FirefoxTitleManager.js';
 
-const windowTitler = new WindowTitler();
-const windowTitleDao = new WindowTitleDao();
+const manager = new FirefoxTitleManager();
+const form = document.querySelector('#window-titler-form');
+const titleInput = document.querySelector('#user-window-title-input');
+const settingsButton = document.querySelector('#btn-settings');
 
-async function setUserWindowTitle(title) {
-  const currentWindow = await window.browser.windows.getCurrent();
-
-  await windowTitler.saveUserWindowTitleAndRefreshPresentation(currentWindow.id, title);
+async function getCurrentWindowId() {
+  const currentWindow = await browser.windows.getCurrent();
+  return currentWindow.id;
 }
 
-async function getCurrentWindowTitle() {
-  const currentWindow = await window.browser.windows.getCurrent();
-  const currentWindowTitle = await windowTitleDao.getUserWindowTitle(currentWindow.id);
-
-  return currentWindowTitle;
-}
-
-document.querySelector('#window-titler-form').addEventListener('submit', async (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const userWindowTitle = document.querySelector('#user-window-title-input').value;
-  await setUserWindowTitle(userWindowTitle);
-
+  await manager.saveWindowTitle(await getCurrentWindowId(), titleInput.value);
   window.close();
 });
 
-window.onload = async () => {
-  const currentWindowTitle = await getCurrentWindowTitle();
-  const userWindowTitleInput = document.querySelector('#user-window-title-input');
+window.addEventListener('load', async () => {
+  titleInput.value = await manager.getWindowTitle(await getCurrentWindowId());
+  titleInput.select();
+});
 
-  userWindowTitleInput.value = currentWindowTitle;
-  userWindowTitleInput.select();
-};
-
-document.querySelector('#btn-settings').onclick = () => browser.runtime.openOptionsPage();
+settingsButton.addEventListener('click', () => browser.runtime.openOptionsPage());

@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Window Titler",
-  "version": "3.0",
-  "description": "Label your windows and profiles using custom window titles.",
+  "name": "Firefox-Title-Manager",
+  "version": "1.0",
+  "description": "Test",
   "applications": {
     "gecko": {
       "id": "{35dd5f9a-ca89-4643-b107-f07d09cc94b5}"
@@ -14,7 +14,7 @@
     "chrome_style": true
   },
   "browser_action": {
-    "default_title": "Window Titler",
+    "default_title": "Firefox-Title-Manager",
     "default_popup": "/src/presentation/popup/popup.html",
     "default_icon": "/assets/icons/dark/icon-32.png",
     "theme_icons": [
@@ -63,7 +63,7 @@
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {
-        "default": "Alt+Ctrl+T"
+        "default": "Alt+W"
       }
     }
   },

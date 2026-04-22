@@ -1,5 +1,5 @@
-Window Titler
-=============
+Firefox-Title-Manager
+=====================
 
 ![downloads shield](https://img.shields.io/amo/dw/window-titler)
 ![users shield](https://img.shields.io/amo/users/window-titler)
@@ -12,7 +12,7 @@ Usage
 -----
 This extension allows you to modify the Firefox window title which is visible in the operating system's window list, task switcher and in the browser's title bar. The title bar is disabled by default in Firefox but can be enabled easily.
 
-* To invoke Window Titler click its toolbar button or use the keyboard shortcut (default: **Ctrl+Alt+T**).
+* To invoke Firefox-Title-Manager click its toolbar button or use the keyboard shortcut (default: **Ctrl+Alt+T**).
 
 * To specify a profile title go to the extension settings page.
 

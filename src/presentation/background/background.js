@@ -1,29 +1,26 @@
-import WindowTitler from '/src/WindowTitler.js';
+import FirefoxTitleManager from '/src/FirefoxTitleManager.js';
 
-const windowTitler = new WindowTitler();
-let pendingRefreshTimeoutId = null;
-let restoreStatePromise = null;
+const manager = new FirefoxTitleManager();
+let restorePromise = null;
+let refreshTimer = null;
 
-function scheduleWindowRefresh() {
-  if (pendingRefreshTimeoutId !== null) {
-    clearTimeout(pendingRefreshTimeoutId);
-  }
-
-  pendingRefreshTimeoutId = setTimeout(async () => {
-    pendingRefreshTimeoutId = null;
-    await initializeWindowState();
+function scheduleRestore() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    restoreSession();
   }, 100);
 }
 
-async function initializeWindowState() {
-  if (!restoreStatePromise) {
-    restoreStatePromise = windowTitler.restoreStateForAllWindows()
+async function restoreSession() {
+  if (!restorePromise) {
+    restorePromise = manager.restoreSession()
       .finally(() => {
-        restoreStatePromise = null;
+        restorePromise = null;
       });
   }
 
-  await restoreStatePromise;
+  await restorePromise;
 }
 
 // Needs to listen in case the user restores windows by clicking the restore button in the session
@@ -33,12 +30,11 @@ async function initializeWindowState() {
 // There doesn't seem to be an appropriate event firing after the session is restored so resorting
 // to this one instead.
 browser.tabs.onCreated.addListener(() => {
-  scheduleWindowRefresh();
+  scheduleRestore();
 });
 
 browser.windows.onCreated.addListener(() => {
-  scheduleWindowRefresh();
+  scheduleRestore();
 });
 
-// Needs to run on startup so restored windows recover their titles after restart or crash recovery.
-initializeWindowState();
+restoreSession();

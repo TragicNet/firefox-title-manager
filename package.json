@@ -1,5 +1,5 @@
 {
-  "name": "webextension-window-titler",
+  "name": "firefox-title-manager",
   "version": "1.0.0",
   "description": "![icon](icons/dark/icon-128.png)",
   "main": "src/presentation/background/background.js",
