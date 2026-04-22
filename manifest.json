@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Firefox-Title-Manager",
   "version": "1.0",
-  "description": "Test",
+  "description": "",
   "applications": {
     "gecko": {
       "id": "{35dd5f9a-ca89-4643-b107-f07d09cc94b5}"

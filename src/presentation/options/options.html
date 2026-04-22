@@ -1,67 +1,111 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <style type="text/css">
-        div { text-align: center; }
-        input { width: 100%; }
-        fieldset { margin-bottom: 1em;}
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Firefox-Title-Manager Settings</title>
+    <link rel="stylesheet" type="text/css" href="options.css">
 </head>
+<body>
+<main class="page-shell">
+    <header class="hero">
+        <div>
+            <p class="eyebrow">Firefox-Title-Manager</p>
+            <h1>Settings</h1>
+            <p class="hero-copy">
+                Configure how custom profile labels and window titles appear across this Firefox profile.
+            </p>
+        </div>
+        <div class="status-pill" id="status-message" aria-live="polite">Ready</div>
+    </header>
 
-<body style="margin-top: 1rem;">
-<form id="options">
-    <fieldset>
-        <legend>Keyboard shortcut</legend>
-        <div style="text-align: justify">
-            Since Firefox 66 keyboard shortcuts can be modified in the Manage Extension Shortcuts settings page. <a href="https://support.mozilla.org/en-US/kb/manage-extension-shortcuts-firefox">How to access it.</a>
-        </div>
-    </fieldset>
-    <fieldset>
-        <legend>Window title tags</legend>
-        <div>
-            <label for="opening-tag">Opening tag:</label>
-            <input type="text" id="opening-tag" maxlength="100"/>
-        </div>
-        <div>
-            <label for="closing-tag">Closing tag:</label>
-            <input type="text" id="closing-tag" maxlength="100"/>
-        </div>
-        <div>
-            <button type="button" id="restore-tag-defaults">Restore defaults</button>
-            <button type="button" id="save-tags">Save</button>
-        </div>
-    </fieldset>
-    <fieldset>
-        <legend>Profile title</legend>
-        <div style="text-align: justify">
-            Define a prefix that will be used for all windows in the current Firefox profile.
-        </div>
-        <div>
-            <label for="profile-title">Profile title:</label>
-            <input type="text" id="profile-title" maxlength="100"/>
-        </div>
-        <div>
-            <label for="profile-title-separator">Profile title separator:</label>
-            <input type="text" id="profile-title-separator" maxlength="100"/>
-        </div>
-        <div>
-            <button type="button" id="restore-profile-defaults">Restore defaults</button>
-            <button type="button" id="save-profile">Save</button>
-        </div>
-    </fieldset>
-    <fieldset>
-        <legend>Logs</legend>
-        <div style="text-align: justify">
-            Extension events are stored with timestamps inside extension storage. Export them to a log file when you need to inspect or share them.
-        </div>
-        <div>
-            <button type="button" id="export-logs">Export logs</button>
-            <button type="button" id="clear-logs">Clear logs</button>
-        </div>
-    </fieldset>
-</form>
+    <form id="options" class="settings-grid">
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Profile Label</h2>
+                    <p>Add a reusable prefix for every window in this profile.</p>
+                </div>
+            </div>
+
+            <div class="field-grid">
+                <label class="field">
+                    <span>Profile title</span>
+                    <input type="text" id="profile-title" maxlength="100" placeholder="Work, Personal, Testing"/>
+                </label>
+
+                <label class="field">
+                    <span>Separator</span>
+                    <input type="text" id="profile-title-separator" maxlength="100" placeholder=" - "/>
+                </label>
+            </div>
+
+            <div class="action-row">
+                <button type="button" class="button button-secondary" id="restore-profile-defaults">Restore defaults</button>
+                <button type="button" class="button button-primary" id="save-profile">Save profile label</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Window Title Tags</h2>
+                    <p>Wrap the generated title in your preferred opening and closing tags.</p>
+                </div>
+            </div>
+
+            <div class="field-grid">
+                <label class="field">
+                    <span>Opening tag</span>
+                    <input type="text" id="opening-tag" maxlength="100" placeholder="["/>
+                </label>
+
+                <label class="field">
+                    <span>Closing tag</span>
+                    <input type="text" id="closing-tag" maxlength="100" placeholder="] "/>
+                </label>
+            </div>
+
+            <div class="preview-card">
+                <span class="preview-label">Preview</span>
+                <code id="title-preview">[Profile - Window] </code>
+            </div>
+
+            <div class="action-row">
+                <button type="button" class="button button-secondary" id="restore-tag-defaults">Restore defaults</button>
+                <button type="button" class="button button-primary" id="save-tags">Save title tags</button>
+            </div>
+        </section>
+
+        <section class="panel panel-wide">
+            <div class="panel-heading">
+                <div>
+                    <h2>Diagnostics</h2>
+                    <p>Export or clear the extension event log when you are testing behavior.</p>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button type="button" class="button button-secondary" id="export-logs">Export logs</button>
+                <button type="button" class="button button-danger" id="clear-logs">Clear logs</button>
+            </div>
+        </section>
+
+        <section class="panel panel-wide">
+            <div class="panel-heading">
+                <div>
+                    <h2>Shortcut</h2>
+                    <p>Firefox manages extension shortcuts from the browser shortcuts settings page.</p>
+                </div>
+            </div>
+
+            <p class="support-copy">
+                You can update the popup shortcut in Firefox’s Manage Extension Shortcuts page.
+                <a href="https://support.mozilla.org/en-US/kb/manage-extension-shortcuts-firefox" target="_blank" rel="noreferrer">Open help article</a>
+            </p>
+        </section>
+    </form>
+</main>
 
 <script type="module" src="options.js"></script>
 </body>
