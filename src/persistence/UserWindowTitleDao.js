@@ -1,50 +1,115 @@
 import StorageInputValidator from './StorageInputValidator.js';
+import WindowStateDao from './WindowStateDao.js';
 
 const sessionStorageNames = {
+  windowStateId: 'windowStateId',
   userWindowTitle: 'userWindowTitle',
+  legacyFullWindowTitle: 'title',
 };
 
 class UserWindowTitleDao {
   constructor() {
     this._storageInputValidator = new StorageInputValidator();
+    this._windowStateDao = new WindowStateDao();
   }
 
   async getUserWindowTitle(windowId) {
-    const userWindowTitle = await browser.sessions
-      .getWindowValue(windowId, sessionStorageNames.userWindowTitle);
-
-    const defaultValue = '';
-    return userWindowTitle || defaultValue;
+    const windowState = await this._getWindowState(windowId);
+    return windowState.userWindowTitle;
   }
 
   async saveUserWindowTitle(currentWindowId, userWindowTitle) {
     this._storageInputValidator.validate(userWindowTitle);
 
-    await browser.sessions
-      .setWindowValue(currentWindowId, sessionStorageNames.userWindowTitle, userWindowTitle);
-  }
-}
+    const windowStateId = await this._ensureWindowStateId(currentWindowId);
 
-// eslint-disable-next-line camelcase
-class FromV1_2_1SessionStorageMigrator {
-  constructor() {
-    this._legacySessionStorageNames = {
-      fullWindowTitle: 'title',
+    await Promise.all([
+      this._windowStateDao.saveState(windowStateId, {
+        userWindowTitle,
+        updatedAt: Date.now(),
+      }),
+      browser.sessions
+        .setWindowValue(currentWindowId, sessionStorageNames.userWindowTitle, userWindowTitle),
+    ]);
+  }
+
+  async ensureWindowState(windowId) {
+    await this._getWindowState(windowId);
+  }
+
+  async pruneStatesForOpenWindows(windowIds) {
+    const allStateIds = await this._windowStateDao.getAllStateIds();
+    const activeStateIds = await Promise.all(windowIds.map(windowId => this._getAssignedWindowStateId(windowId)));
+    const stateIdsToDelete = allStateIds.filter(stateId => !activeStateIds.includes(stateId));
+
+    await Promise.all(stateIdsToDelete.map(stateId => this._windowStateDao.deleteState(stateId)));
+  }
+
+  async _getWindowState(windowId) {
+    const windowStateId = await this._ensureWindowStateId(windowId);
+    const windowState = await this._windowStateDao.getState(windowStateId);
+
+    return windowState || {
+      userWindowTitle: '',
+      updatedAt: Date.now(),
     };
   }
 
-  async migrateWindowTitleToNewStorageFormat(windowId) {
+  async _ensureWindowStateId(windowId) {
+    const existingStateId = await this._getAssignedWindowStateId(windowId);
+    if (existingStateId) {
+      return existingStateId;
+    }
+
+    const recoveredUserWindowTitle = await this._getRecoverableUserWindowTitle(windowId);
+    const windowStateId = await this._windowStateDao.createState({
+      userWindowTitle: recoveredUserWindowTitle,
+      updatedAt: Date.now(),
+    });
+
+    await browser.sessions.setWindowValue(windowId, sessionStorageNames.windowStateId, windowStateId);
+    return windowStateId;
+  }
+
+  async _getAssignedWindowStateId(windowId) {
+    const windowStateId = await browser.sessions
+      .getWindowValue(windowId, sessionStorageNames.windowStateId);
+
+    if (!windowStateId) {
+      return null;
+    }
+
+    const state = await this._windowStateDao.getState(windowStateId);
+    return state ? windowStateId : null;
+  }
+
+  async _getRecoverableUserWindowTitle(windowId) {
+    const recoveredUserWindowTitle = await browser.sessions
+      .getWindowValue(windowId, sessionStorageNames.userWindowTitle);
+    if (recoveredUserWindowTitle) {
+      return recoveredUserWindowTitle;
+    }
+
+    return this._migrateLegacyWindowTitle(windowId);
+  }
+
+  async _migrateLegacyWindowTitle(windowId) {
     const fullWindowTitle = await browser.sessions
-      .getWindowValue(windowId, this._legacySessionStorageNames.fullWindowTitle);
-    if (!fullWindowTitle) return;
+      .getWindowValue(windowId, sessionStorageNames.legacyFullWindowTitle);
+    if (!fullWindowTitle) {
+      return '';
+    }
 
     const userWindowTitle = this._convertToUserWindowTitle(fullWindowTitle);
 
-    await browser.sessions
-      .setWindowValue(windowId, sessionStorageNames.userWindowTitle, userWindowTitle);
+    await Promise.all([
+      browser.sessions
+        .setWindowValue(windowId, sessionStorageNames.userWindowTitle, userWindowTitle),
+      browser.sessions
+        .removeWindowValue(windowId, sessionStorageNames.legacyFullWindowTitle),
+    ]);
 
-    await browser.sessions
-      .removeWindowValue(windowId, this._legacySessionStorageNames.fullWindowTitle);
+    return userWindowTitle;
   }
 
   _convertToUserWindowTitle(fullWindowTitle) {
@@ -53,40 +118,4 @@ class FromV1_2_1SessionStorageMigrator {
   }
 }
 
-// eslint-disable-next-line camelcase,max-len
-export default class FromV1_2_1MigratingUserWindowTitleDao extends UserWindowTitleDao {
-  constructor() {
-    super();
-
-    this._fromV1_2_1StorageMigrator = new FromV1_2_1SessionStorageMigrator();
-  }
-
-  /* Not a fancy thing to mutate the state in something aspiring to be a getter method.
-   * Well, sometimes it has to be done:
-   *
-   * Window Titler v1.2.1 persisted the full window title (i.e. including opening, closing tab and
-   * space at the end) this is not useful anymore, it needs to persist only the user window title
-   * (i.e. value inputted by the user) so "[myWindowTitle] " becomes "myWindowTitle". And they're
-   * stored in different places.
-   *
-   * Unfortunately migration cannot be done in a one go, as the browser.sessions API doesn't provide
-   * a way to access and modify the state of the unrestored window values.
-   *
-   * What can be done instead is to migrate them to the new storage format one by one. Doing
-   * it in this method increases the speed of transition - it is invoked more often when compared
-   * to the matching save method and what's more the matching save method might not be invoked at
-   * all.
-   *
-   * And maybe this functionality can be removed some time in the future when noone is using v1.2.1
-   * (and below) anymore.
-   *
-   *
-   *
-   * *This is idempotent and totally transparent to the caller.*
-   */
-  async getUserWindowTitle(windowId) {
-    await this._fromV1_2_1StorageMigrator.migrateWindowTitleToNewStorageFormat(windowId);
-
-    return super.getUserWindowTitle(windowId);
-  }
-}
+export default UserWindowTitleDao;

@@ -34,6 +34,14 @@ export default class WindowTitler {
     await this._refreshPresentationForWindow(windowId);
   }
 
+  async restoreStateForAllWindows() {
+    const windows = await browser.windows.getAll();
+
+    await Promise.all(windows.map(({ id }) => this._windowTitleDao.ensureWindowState(id)));
+    await this._windowTitleDao.pruneStatesForOpenWindows(windows.map(({ id }) => id));
+    await this.refreshPresentationForAllWindows();
+  }
+
   async refreshPresentationForAllWindows() {
     const [windows, sharedTitleParts] = await Promise.all([
       browser.windows.getAll(),

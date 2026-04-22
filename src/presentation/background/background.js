@@ -2,6 +2,7 @@ import WindowTitler from '/src/WindowTitler.js';
 
 const windowTitler = new WindowTitler();
 let pendingRefreshTimeoutId = null;
+let restoreStatePromise = null;
 
 function scheduleWindowRefresh() {
   if (pendingRefreshTimeoutId !== null) {
@@ -10,8 +11,19 @@ function scheduleWindowRefresh() {
 
   pendingRefreshTimeoutId = setTimeout(async () => {
     pendingRefreshTimeoutId = null;
-    await windowTitler.refreshPresentationForAllWindows();
+    await initializeWindowState();
   }, 100);
+}
+
+async function initializeWindowState() {
+  if (!restoreStatePromise) {
+    restoreStatePromise = windowTitler.restoreStateForAllWindows()
+      .finally(() => {
+        restoreStatePromise = null;
+      });
+  }
+
+  await restoreStatePromise;
 }
 
 // Needs to listen in case the user restores windows by clicking the restore button in the session
@@ -24,5 +36,9 @@ browser.tabs.onCreated.addListener(() => {
   scheduleWindowRefresh();
 });
 
-// Needs to run if the session is restored automatically, without the session manager window.
-scheduleWindowRefresh();
+browser.windows.onCreated.addListener(() => {
+  scheduleWindowRefresh();
+});
+
+// Needs to run on startup so restored windows recover their titles after restart or crash recovery.
+initializeWindowState();
