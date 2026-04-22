@@ -21,11 +21,11 @@ async function restoreProfileOptions() {
   setProfileOptions(profileTitle, profileTitleSeparator);
 }
 
-function saveProfileOptions() {
+async function saveProfileOptions() {
   const profileTitle = document.querySelector('#profile-title').value;
   const profileTitleSeparator = document.querySelector('#profile-title-separator').value;
 
-  windowTitler.saveProfileTitleAndRefreshPresentation(profileTitle, profileTitleSeparator);
+  await windowTitler.saveProfileTitleAndRefreshPresentation(profileTitle, profileTitleSeparator);
 }
 
 function restoreProfileDefaults() {
@@ -45,10 +45,10 @@ async function restoreFullWindowTitleTagOptions() {
   setFullWindowTitleTagOptions(openingTag, closingTag);
 }
 
-function saveFullWindowTitleTagOptions() {
+async function saveFullWindowTitleTagOptions() {
   const openingTag = document.querySelector('#opening-tag').value;
   const closingTag = document.querySelector('#closing-tag').value;
-  windowTitler.saveFullWindowTitleTagsAndRefreshPresentation(openingTag, closingTag);
+  await windowTitler.saveFullWindowTitleTagsAndRefreshPresentation(openingTag, closingTag);
 }
 
 function restoreFullWindowTitleTagDefaults() {

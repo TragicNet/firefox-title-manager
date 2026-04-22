@@ -12,16 +12,20 @@ export default class WindowTitler {
   }
 
   async saveProfileTitleAndRefreshPresentation(profileTitle, profileTitleSeparator = null) {
-    await this._profileTitleDao.saveProfileTitle(profileTitle);
+    const saveOperations = [this._profileTitleDao.saveProfileTitle(profileTitle)];
     if (profileTitleSeparator !== null) {
-      await this._profileTitleDao.saveProfileTitleSeparator(profileTitleSeparator);
+      saveOperations.push(this._profileTitleDao.saveProfileTitleSeparator(profileTitleSeparator));
     }
+
+    await Promise.all(saveOperations);
     await this.refreshPresentationForAllWindows();
   }
 
   async saveFullWindowTitleTagsAndRefreshPresentation(openingTag, closingTag) {
-    await this._fullWindowTitleTagDao.saveOpeningTag(openingTag);
-    await this._fullWindowTitleTagDao.saveClosingTag(closingTag);
+    await Promise.all([
+      this._fullWindowTitleTagDao.saveOpeningTag(openingTag),
+      this._fullWindowTitleTagDao.saveClosingTag(closingTag),
+    ]);
     await this.refreshPresentationForAllWindows();
   }
 
@@ -31,21 +35,48 @@ export default class WindowTitler {
   }
 
   async refreshPresentationForAllWindows() {
-    await browser.windows.getAll((windows) => {
-      windows.map(window => window.id)
-        .forEach(windowId => this._refreshPresentationForWindow(windowId));
-    });
+    const [windows, sharedTitleParts] = await Promise.all([
+      browser.windows.getAll(),
+      this._getSharedTitleParts(),
+    ]);
+
+    await Promise.all(
+      windows.map(({ id }) => this._refreshPresentationForWindow(id, sharedTitleParts)),
+    );
   }
 
-  async _refreshPresentationForWindow(windowId) {
-    const profileTitle = await this._profileTitleDao.getProfileTitle();
-    const profileTitleSeparator = await this._profileTitleDao.getProfileTitleSeparator();
-    const fullWindowTitleOpeningTag = await this._fullWindowTitleTagDao.getOpeningTag();
-    const fullWindowTitleClosingTag = await this._fullWindowTitleTagDao.getClosingTag();
+  async _refreshPresentationForWindow(windowId, sharedTitleParts = null) {
+    const {
+      profileTitle,
+      profileTitleSeparator,
+      fullWindowTitleOpeningTag,
+      fullWindowTitleClosingTag,
+    } = sharedTitleParts || await this._getSharedTitleParts();
     const userWindowTitle = await this._windowTitleDao.getUserWindowTitle(windowId);
     const fullWindowTitle = await this._titleComputer.computeFullWindowTitle(profileTitle,
       profileTitleSeparator, userWindowTitle, fullWindowTitleOpeningTag, fullWindowTitleClosingTag);
 
     await browser.windows.update(windowId, { titlePreface: fullWindowTitle });
+  }
+
+  async _getSharedTitleParts() {
+    const [
+      profileTitle,
+      profileTitleSeparator,
+      fullWindowTitleOpeningTag,
+      fullWindowTitleClosingTag,
+    ] = await Promise.all([
+      this._profileTitleDao.getProfileTitle(),
+      this._profileTitleDao.getProfileTitleSeparator(),
+      this._fullWindowTitleTagDao.getOpeningTag(),
+      this._fullWindowTitleTagDao.getClosingTag(),
+    ]);
+
+    return {
+      profileTitle,
+      profileTitleSeparator,
+      fullWindowTitleOpeningTag,
+      fullWindowTitleClosingTag,
+    };
   }
 }
